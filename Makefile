@@ -15,7 +15,6 @@ build: $(CMDS) ## Build Go binaries
 cmd/gh-pr-stats-retriever/gh-pr-stats-retriever: $(shell find cmd/gh-pr-stats-retriever pkg internal -type f -name '*.go')
 	cd `dirname $@` && go build $(BUILDARGS) -o `basename $@` *.go
 
-
 .PHONY: gofmt
 gofmt:
 	@if test "$(FIX)" = "1"; then \

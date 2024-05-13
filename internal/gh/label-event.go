@@ -49,7 +49,8 @@ func sortEvent(i *github.IssueEvent, j *github.IssueEvent) int {
 	}
 }
 
-func getStats(events []*github.IssueEvent, labelNames []string) (*LabelEventStats, error) {
+func getStats(events []*github.IssueEvent, labelNames []string, pr *PullRequest) (*LabelEventStats, error) {
+	var opened bool = true
 	if len(labelNames) == 0 {
 		return nil, errors.New("no label names provided")
 	}
@@ -81,28 +82,37 @@ func getStats(events []*github.IssueEvent, labelNames []string) (*LabelEventStat
 				res.Current = false
 				res.SecondsWithLabel += int(eventCreatedTime.Sub(*res.LastAdded).Seconds())
 			}
+		case "closed", "merged":
+			if res.Current {
+				res.SecondsWithLabel += int(eventCreatedTime.Sub(*res.LastAdded).Seconds())
+			}
+			opened = false
+		case "reopened":
+			opened = true
 		default:
 			return nil, fmt.Errorf("unknown event type: %s", event.GetEvent())
 		}
 	}
-	if res.Current && res.LastAdded != nil {
+	if res.Current && res.LastAdded != nil && pr.State == PullRequestStateOpen && opened {
 		res.SecondsWithLabel += int(time.Since(*res.LastAdded).Seconds())
 	}
 	return &res, nil
 }
 
-func GetLabelEventStats(client *Client, config *config.Config, prNumber int) ([]LabelEventStats, error) {
+func GetLabelEventStats(client *Client, config *config.Config, pr *PullRequest) ([]LabelEventStats, error) {
 	logger := log.GetLogger().With(slog.String("owner", config.Owner), slog.String("repo", config.Repo))
-	options := github.ListOptions{}
+	options := &github.ListOptions{
+		Page: 1,
+	}
 	events := []*github.IssueEvent{}
 	for {
-		logger.Info("Fetching label issue events...", slog.Int("prNumber", prNumber), slog.Int("page", options.Page))
-		evts, resp, err := client.client.Issues.ListIssueEvents(context.Background(), config.Owner, config.Repo, prNumber, nil)
+		logger.Info("Fetching label issue events...", slog.Int("pr.Number", pr.Number), slog.Int("page", options.Page))
+		evts, resp, err := client.client.Issues.ListIssueEvents(context.Background(), config.Owner, config.Repo, pr.Number, options)
 		if err != nil {
 			return nil, err
 		}
 		for _, evt := range evts {
-			if evt.GetEvent() != "labeled" && evt.GetEvent() == "unlabeled" {
+			if evt.GetEvent() != "labeled" && evt.GetEvent() == "unlabeled" && evt.GetEvent() == "closed" && evt.GetEvent() == "merged" && evt.GetEvent() == "reopened" {
 				continue
 			}
 			events = append(events, evt)
@@ -116,7 +126,7 @@ func GetLabelEventStats(client *Client, config *config.Config, prNumber int) ([]
 	logger.Info("Issue label events fetched", slog.Int("count", len(events)))
 	res := []LabelEventStats{}
 	for _, labelNames := range config.LabelsStats.Labels {
-		stats, err := getStats(events, labelNames)
+		stats, err := getStats(events, labelNames, pr)
 		if err != nil {
 			return nil, err
 		}

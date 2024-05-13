@@ -49,11 +49,15 @@ func GetPRs(client *Client, config *config.Config) ([]*PullRequest, error) {
 	options := github.PullRequestListOptions{
 		Sort:      "updated",
 		Direction: "desc",
+		ListOptions: github.ListOptions{
+			Page: 1,
+		},
 	}
 	alreadySeen := map[int64]bool{}
 	res := []*PullRequest{}
 	for _, selectPR := range config.SelectPRs {
 		options.State = selectPR.State
+	out:
 		for {
 			logger.Info("Fetching PRs...", slog.String("state", selectPR.State), slog.Int("page", options.Page))
 			prs, resp, err := client.client.PullRequests.List(context.Background(), config.Owner, config.Repo, &options)
@@ -61,6 +65,9 @@ func GetPRs(client *Client, config *config.Config) ([]*PullRequest, error) {
 				return nil, err
 			}
 			for _, pr := range prs {
+				if config.RestrictToPr > 0 && pr.GetNumber() != config.RestrictToPr {
+					continue
+				}
 				if _, ok := alreadySeen[pr.GetID()]; ok {
 					continue
 				}
@@ -71,14 +78,14 @@ func GetPRs(client *Client, config *config.Config) ([]*PullRequest, error) {
 				since := int(time.Since(*pr.UpdatedAt.GetTime()).Seconds())
 				if selectPR.UpdatedSeconds > 0 && since > selectPR.UpdatedSeconds {
 					logger.Debug("PR too old", slog.Int("number", pr.GetNumber()), slog.Int("since", since), slog.Int("threshold", selectPR.UpdatedSeconds))
-					continue
+					break
 				}
 				alreadySeen[pr.GetID()] = true
 				res = append(res, NewPullRequest(pr))
 				logger.Info("PR fetched", slog.Int("number", pr.GetNumber()))
 			}
 			if resp.NextPage == 0 {
-				break
+				break out
 			}
 			options.Page = resp.NextPage
 		}

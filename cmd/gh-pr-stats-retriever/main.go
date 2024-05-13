@@ -24,6 +24,10 @@ func forceConfigFromCliContext(context *cli.Context, config *config.Config) {
 	if token != "" {
 		config.Token = token
 	}
+	restrictToPr := context.Int("restrict-to-pr")
+	if restrictToPr != 0 {
+		config.RestrictToPr = restrictToPr
+	}
 }
 
 func app(context *cli.Context) error {
@@ -51,7 +55,7 @@ func app(context *cli.Context) error {
 	for _, pr := range prs {
 		var stats []gh.LabelEventStats = nil
 		if config.LabelsStats.Enabled {
-			stats, err = gh.GetLabelEventStats(client, config, pr.Number)
+			stats, err = gh.GetLabelEventStats(client, config, pr)
 			if err != nil {
 				return err
 			}
@@ -79,6 +83,11 @@ func main() {
 				Value:   "",
 				Usage:   "",
 				EnvVars: []string{"GH_PR_STATS_REPO"},
+			},
+			&cli.IntFlag{
+				Name:  "restrict-to-pr",
+				Value: 0,
+				Usage: "restrict stats to a specific PR number",
 			},
 			&cli.StringFlag{
 				Name:    "token",

@@ -26,12 +26,13 @@ type LabelsStats struct {
 
 // Config represents the configuration of the application
 type Config struct {
-	Path        string
-	Owner       string `toml:"owner" validate:"required"`
-	Repo        string `toml:"repo" validate:"required"`
-	Token       string
-	SelectPRs   []SelectPR  `toml:"select_prs"`
-	LabelsStats LabelsStats `toml:"labels_stats"`
+	Path         string
+	Owner        string `toml:"owner" validate:"required"`
+	Repo         string `toml:"repo" validate:"required"`
+	RestrictToPr int
+	Token        string
+	SelectPRs    []SelectPR  `toml:"select_prs"`
+	LabelsStats  LabelsStats `toml:"labels_stats"`
 }
 
 func readConfig(path string) ([]byte, error) {

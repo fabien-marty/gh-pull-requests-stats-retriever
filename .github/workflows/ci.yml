@@ -21,6 +21,9 @@ jobs:
             - name: Run lint
               run: |
                 make FIX=0 lint
+            - name: Run test
+              run: |
+                make test
             - name: Run git checks
               run: |
                 N=`git diff |wc -l`

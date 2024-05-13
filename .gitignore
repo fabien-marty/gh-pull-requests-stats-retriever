@@ -21,4 +21,4 @@
 go.work
 
 /cmd/gh-pr-stats-retriever/gh-pr-stats-retriever
-/golangci-lint
+/tmp

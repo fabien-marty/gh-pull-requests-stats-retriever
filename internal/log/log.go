@@ -18,10 +18,15 @@ var defaultLogLevel = slog.LevelInfo
 func GetLogger() *slog.Logger {
 	defaultLogLevelMutex.RLock()
 	defer defaultLogLevelMutex.RUnlock()
+	addSource := false
+	if defaultLogLevel == slog.LevelDebug {
+		addSource = true
+	}
 	return slog.New(
 		tint.NewHandler(os.Stderr, &tint.Options{
-			TimeFormat: time.Kitchen,
+			TimeFormat: time.TimeOnly,
 			Level:      defaultLogLevel,
+			AddSource:  addSource,
 		}),
 	)
 }

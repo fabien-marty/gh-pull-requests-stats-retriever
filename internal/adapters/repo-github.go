@@ -55,6 +55,7 @@ func (r *repoGitHub) GetPRs(owner, repo string, opts domain_repo.GetPRsOptions) 
 		ListOptions: github.ListOptions{
 			Page: 1,
 		},
+		State: opts.State,
 	}
 	res := []domain_repo.PullRequest{}
 out:
@@ -84,6 +85,7 @@ out:
 		}
 		options.Page = resp.NextPage
 	}
+	logger.Debug("Fetched PRs", slog.Int("count", len(res)))
 	return res, nil
 }
 
@@ -120,5 +122,6 @@ func (r *repoGitHub) ListIssueEvents(owner, repo string, issueNumber int) ([]dom
 		}
 		options.Page = resp.NextPage
 	}
+	logger.Debug("Fetched label issue events", slog.Int("count", len(res)))
 	return res, nil
 }

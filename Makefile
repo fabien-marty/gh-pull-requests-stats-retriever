@@ -4,8 +4,7 @@ FIX=1
 CGO_ENABLED=1
 COMMON_TEST_OPTIONS=-race -cover -covermode=atomic
 CMDS=cmd/gh-pr-stats-retriever/gh-pr-stats-retriever
-EXTRA_BUILDARGS=
-BUILDARGS=$(EXTRA_BUILDARGS)
+BUILDARGS=
 
 default: help
 
@@ -51,7 +50,7 @@ _merge_coverage:
 	rm -Rf covdatafiles
 
 .PHONY: test
-test: _cmd_clean build _prepare_coverage _unit_test _merge_coverage ## Execute all tests 
+test: _prepare_coverage _unit_test _merge_coverage ## Execute all tests 
 
 .PHONY: html-coverage
 html-coverage: test ## Build html coverage

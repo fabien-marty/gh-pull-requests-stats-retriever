@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/gh"
+	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/domain/repo"
+	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/domain/stats"
 )
 
 type PROutput struct {
-	gh.PullRequest
-	LabelsStats []gh.LabelEventStats `json:"labels_stats"`
+	repo.PullRequest
+	LabelsStats []stats.LabelEventStats `json:"labels_stats"`
 }
 
 type Output struct {
@@ -24,15 +25,19 @@ func New() *Output {
 	}
 }
 
-func (output *Output) AddPROutput(pr *gh.PullRequest, stats []gh.LabelEventStats) {
+func (output *Output) AddPROutput(pr repo.PullRequest, stats []stats.LabelEventStats) {
 	output.PRs = append(output.PRs, PROutput{
-		PullRequest: *pr,
+		PullRequest: pr,
 		LabelsStats: stats,
 	})
 }
 
+func (o *Output) Marshall() ([]byte, error) {
+	return json.MarshalIndent(o, "", "    ")
+}
+
 func (o *Output) Print() error {
-	output, err := json.MarshalIndent(o, "", "    ")
+	output, err := o.Marshall()
 	if err != nil {
 		return err
 	}

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/adapters"
 	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/config"
-	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/gh"
+	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/domain/repo"
+	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/domain/stats"
 	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/log"
 	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/output"
 	"github.com/urfave/cli/v2"
@@ -46,21 +48,22 @@ func app(context *cli.Context) error {
 		return fmt.Errorf("config validation failed: %w", err)
 	}
 	log.GetLogger().Debug("Configuration looks valid")
-	client := gh.GetClient(config)
-	prs, err := gh.GetPRs(client, config)
+	repoAdapter := adapters.NewRepoGitHub(config)
+	repoService := repo.NewService(repoAdapter, config.Owner, config.Repo)
+	prs, err := repoService.GetPRs(config.GetPRsOptionss())
 	if err != nil {
 		return err
 	}
 	out := output.New()
 	for _, pr := range prs {
-		var stats []gh.LabelEventStats = nil
+		var sts []stats.LabelEventStats = nil
 		if config.LabelsStats.Enabled {
-			stats, err = gh.GetLabelEventStats(client, config, pr)
+			sts, err = stats.ComputeLabelEventStats(repoService, pr, config.LabelsStats.Labels)
 			if err != nil {
 				return err
 			}
 		}
-		out.AddPROutput(pr, stats)
+		out.AddPROutput(pr, sts)
 	}
 	out.Print()
 	return nil

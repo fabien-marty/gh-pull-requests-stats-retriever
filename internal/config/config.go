@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
+	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/domain/repo"
 	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/log"
 	"github.com/pelletier/go-toml/v2"
 )
@@ -75,4 +76,16 @@ func Parse(path string) (*Config, error) {
 func (c *Config) Validate() error {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	return validate.Struct(c)
+}
+
+func (c *Config) GetPRsOptionss() []repo.GetPRsOptions {
+	opts := []repo.GetPRsOptions{}
+	for _, selectPR := range c.SelectPRs {
+		opts = append(opts, repo.GetPRsOptions{
+			State:          selectPR.State,
+			RestrictToPr:   c.RestrictToPr,
+			UpdatedSeconds: selectPR.UpdatedSeconds,
+		})
+	}
+	return opts
 }

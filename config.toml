@@ -22,9 +22,6 @@ updated_seconds = 0 # PRs updated in the last X seconds (if the keyword is not p
 
 ### Statistics to retrieve
 
-[basic_stats]
-enabled = true
-
 [labels_stats]
 enabled = true
 labels = [["PR: Review TODO", "PR FIXME"]]

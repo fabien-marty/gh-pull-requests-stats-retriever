@@ -3,7 +3,6 @@ package gh
 import (
 	"context"
 	"log/slog"
-	"slices"
 	"time"
 
 	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/config"
@@ -45,7 +44,7 @@ func NewPullRequest(pr *github.PullRequest) *PullRequest {
 	}
 }
 
-func GetPRs(client *Client, config *config.Config, prNumbersToIgnore []int) ([]*PullRequest, error) {
+func GetPRs(client *Client, config *config.Config) ([]*PullRequest, error) {
 	logger := log.GetLogger().With(slog.String("owner", config.Owner), slog.String("repo", config.Repo))
 	options := github.PullRequestListOptions{
 		Sort:      "updated",
@@ -67,10 +66,6 @@ func GetPRs(client *Client, config *config.Config, prNumbersToIgnore []int) ([]*
 				}
 				if pr.Number == nil {
 					logger.Warn("PR has no number", slog.Int64("id", pr.GetID()))
-					continue
-				}
-				if slices.Contains(prNumbersToIgnore, *pr.Number) {
-					logger.Debug("PR explicitly ignored", slog.Int("number", *pr.Number))
 					continue
 				}
 				since := int(time.Since(*pr.UpdatedAt.GetTime()).Seconds())

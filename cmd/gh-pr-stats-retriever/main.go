@@ -43,15 +43,18 @@ func app(context *cli.Context) error {
 	}
 	log.GetLogger().Debug("Configuration looks valid")
 	client := gh.GetClient(config)
-	prs, err := gh.GetPRs(client, config, []int{})
+	prs, err := gh.GetPRs(client, config)
 	if err != nil {
 		return err
 	}
 	out := output.New()
 	for _, pr := range prs {
-		stats, err := gh.GetLabelEventStats(client, config, pr.Number)
-		if err != nil {
-			return err
+		var stats []gh.LabelEventStats = nil
+		if config.LabelsStats.Enabled {
+			stats, err = gh.GetLabelEventStats(client, config, pr.Number)
+			if err != nil {
+				return err
+			}
 		}
 		out.AddPROutput(pr, stats)
 	}
@@ -97,9 +100,7 @@ func main() {
 			},
 		},
 	}
-
 	if err := app.Run(os.Args); err != nil {
 		log.GetLogger().Error(err.Error())
 	}
-
 }

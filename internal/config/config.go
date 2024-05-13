@@ -12,27 +12,25 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
+// SelectPR represents the configuration of a "PR to select" block
 type SelectPR struct {
 	State          string `toml:"state" validate:"eq=open,closed,all"`
 	UpdatedSeconds int    `toml:"updated_seconds"`
 }
 
-type BasicStats struct {
-	Enabled bool `toml:"enabled"`
-}
-
+// LabelsStats represents the configuration of the labels stats
 type LabelsStats struct {
 	Enabled bool       `toml:"enabled"`
 	Labels  [][]string `toml:"labels"`
 }
 
+// Config represents the configuration of the application
 type Config struct {
 	Path        string
 	Owner       string `toml:"owner" validate:"required"`
 	Repo        string `toml:"repo" validate:"required"`
 	Token       string
 	SelectPRs   []SelectPR  `toml:"select_prs"`
-	BasicStats  BasicStats  `toml:"basic_stats"`
 	LabelsStats LabelsStats `toml:"labels_stats"`
 }
 
@@ -52,6 +50,7 @@ func readConfig(path string) ([]byte, error) {
 	return content, nil
 }
 
+// Parse parses the config file at the given path
 func Parse(path string) (*Config, error) {
 	absolutePath, err := filepath.Abs(path)
 	if err != nil {
@@ -71,6 +70,7 @@ func Parse(path string) (*Config, error) {
 	return &cfg, nil
 }
 
+// Validate validates the current config object
 func (c *Config) Validate() error {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	return validate.Struct(c)

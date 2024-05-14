@@ -2,22 +2,41 @@ package stats
 
 import (
 	"errors"
-	"fmt"
-	"slices"
 	"time"
 
 	"github.com/fabien-marty/gh-pull-requests-stats-retriever/internal/domain/repo"
 )
 
 type LabelEventStats struct {
-	FirstAdded          *time.Time `json:"first_added"`
-	LastAdded           *time.Time `json:"last_added"`
-	lastAddedOrReopened *time.Time
-	FirstRemoved        *time.Time `json:"first_removed"`
-	LastRemoved         *time.Time `json:"last_removed"`
-	SecondsWithLabel    int        `json:"seconds_with_label"`
-	Current             bool       `json:"current"`
-	Labels              []string   `json:"labels"`
+	LabelsGroup           []string   `json:"labels_group"`
+	FirstFlagged          *time.Time `json:"first_flagged"`
+	LastFlagged           *time.Time `json:"last_flagged"`
+	lastFlaggedOrReopened *time.Time
+	FirstUnflagged        *time.Time `json:"first_unflagged"`
+	LastUnflagged         *time.Time `json:"last_unflagged"`
+	SecondsWithFlag       int        `json:"seconds_with_flag"`
+	labelGroup            labelGroup
+	CurrentFlag           bool `json:"current_flag"`
+}
+
+func switchState(stats *LabelEventStats, eventCreatedTime time.Time) {
+	if stats.labelGroup.isFlagged() {
+		// we switch to flagged state
+		if stats.FirstFlagged == nil {
+			stats.FirstFlagged = &eventCreatedTime
+		}
+		stats.LastFlagged = &eventCreatedTime
+		stats.lastFlaggedOrReopened = &eventCreatedTime
+		stats.CurrentFlag = true
+	} else {
+		// we switch to unflagged state
+		if stats.FirstUnflagged == nil {
+			stats.FirstUnflagged = &eventCreatedTime
+		}
+		stats.LastUnflagged = &eventCreatedTime
+		stats.SecondsWithFlag += int(eventCreatedTime.Sub(*stats.lastFlaggedOrReopened).Seconds())
+		stats.CurrentFlag = false
+	}
 }
 
 func getStats(events []repo.IssueTimeline, labelNames []string, pr repo.PullRequest) (*LabelEventStats, error) {
@@ -25,46 +44,45 @@ func getStats(events []repo.IssueTimeline, labelNames []string, pr repo.PullRequ
 	if len(labelNames) == 0 {
 		return nil, errors.New("no label names provided")
 	}
-	res := LabelEventStats{Labels: labelNames}
+	res := LabelEventStats{labelGroup: newLabelGroup(labelNames), LabelsGroup: labelNames}
+	res.CurrentFlag = res.labelGroup.isFlagged()
+	if res.CurrentFlag {
+		// we start with a flagged state
+		res.FirstFlagged = pr.CreatedAt
+		res.LastFlagged = pr.CreatedAt
+		res.lastFlaggedOrReopened = pr.CreatedAt
+	}
 	for _, event := range events {
 		eventCreatedTime := event.CreatedAt
 		switch event.Type {
 		case repo.IssueTimelineTypeLabeled:
-			if !slices.Contains(labelNames, event.Label) {
+			if !res.labelGroup.label(event.Label) {
+				// tag not related to this label group
 				continue
 			}
-			if res.FirstAdded == nil {
-				res.FirstAdded = &eventCreatedTime
+			if res.CurrentFlag != res.labelGroup.isFlagged() {
+				switchState(&res, eventCreatedTime)
 			}
-			res.LastAdded = &eventCreatedTime
-			res.lastAddedOrReopened = &eventCreatedTime
-			res.Current = true
 		case repo.IssueTimelineTypeUnlabeled:
-			if !slices.Contains(labelNames, event.Label) {
+			if !res.labelGroup.unlabel(event.Label) {
+				// tag not related to this label group
 				continue
 			}
-			if res.FirstRemoved == nil {
-				res.FirstRemoved = &eventCreatedTime
-			}
-			res.LastRemoved = &eventCreatedTime
-			if res.Current {
-				res.Current = false
-				res.SecondsWithLabel += int(eventCreatedTime.Sub(*res.lastAddedOrReopened).Seconds())
+			if res.CurrentFlag != res.labelGroup.isFlagged() {
+				switchState(&res, eventCreatedTime)
 			}
 		case repo.IssueTimelineTypeClosed, repo.IssueTimelineTypeMerged:
-			if res.Current {
-				res.SecondsWithLabel += int(eventCreatedTime.Sub(*res.lastAddedOrReopened).Seconds())
+			if res.CurrentFlag {
+				res.SecondsWithFlag += int(eventCreatedTime.Sub(*res.lastFlaggedOrReopened).Seconds())
 			}
 			opened = false
 		case repo.IssueTimelineTypeReopened:
 			opened = true
-			res.lastAddedOrReopened = &eventCreatedTime
-		default:
-			return nil, fmt.Errorf("unknown event type: %s", event.Type)
+			res.lastFlaggedOrReopened = &eventCreatedTime
 		}
 	}
-	if res.Current && res.LastAdded != nil && pr.State == "open" && opened {
-		res.SecondsWithLabel += int(time.Since(*res.lastAddedOrReopened).Seconds())
+	if res.CurrentFlag && res.LastFlagged != nil && pr.State == "open" && opened {
+		res.SecondsWithFlag += int(time.Since(*res.lastFlaggedOrReopened).Seconds())
 	}
 	return &res, nil
 }

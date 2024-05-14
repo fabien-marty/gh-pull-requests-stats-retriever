@@ -115,6 +115,10 @@ func (r *repoGitHub) ListIssueTimeline(owner, repo string, issueNumber int) ([]d
 			return nil, err
 		}
 		for _, evt := range evts {
+			if evt.CreatedAt == nil {
+				// FIXME: we have to deal with that
+				continue
+			}
 			res = append(res, newTimelineEvent(evt))
 		}
 		if resp.NextPage == 0 {

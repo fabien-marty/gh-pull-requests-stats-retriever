@@ -12,36 +12,41 @@ owner = ""
 # (can be overriden by the command line argument --owner)
 repo = ""
 
-#[[select_prs]]
-#state = "open" # state of the PR: open, closed or all
+# To select the PRs to retrieve in this repo, you can add multiple:
+# [[select_prs]] sections with keys: state (mandatory) and updated_seconds (optional)
+[[select_prs]]
+state = "open" # state of the PR: open, closed or all
 
 [[select_prs]]
 state = "closed"           # state of the PR: open, closed or all
 updated_seconds = 31536000 # PRs updated in the last X seconds (if the keyword is not present or if X <= 0, it will be ignored)
-# FIXME
 
 ### Statistics to retrieve
 
-[labels_stats]
-enabled = true
+# To retrieve statistics on the PRs, you can add multiple:
+# [[labels_stats]] sections with the labels mandatory key
+# labels key is an array of labels
+# - if there is more than one label, statistics will be computed for the intersection of the labels
+# - if a label starts with "-" (minus), we consider the absence of the label (and not the presence)
+[[labels_stats]]
+labels = ["PR: Review TODO"]
+
+[[labels_stats]]
 labels = [
-    [
-        "PR: Review TODO",
-    ],
-    [
-        "PR: Review OK",
-        "No QA",
-        "-On Hold",
-        "-on hold",
-        "-on hold infra",
-        "-No merge to devel",
-    ],
-    [
-        "PR: Review OK",
-        "QA - OK",            # QA: OK
-        "-On Hold",
-        "-on hold",
-        "-on hold infra",
-        "-No merge to devel",
-    ],
+    "PR: Review OK",
+    "No QA",
+    "-On Hold",
+    "-on hold",
+    "-on hold infra",
+    "-No merge to devel",
+]
+
+[[labels_stats]]
+labels = [
+    "PR: Review OK",
+    "QA - OK",
+    "-On Hold",
+    "-on hold",
+    "-on hold infra",
+    "-No merge to devel",
 ]

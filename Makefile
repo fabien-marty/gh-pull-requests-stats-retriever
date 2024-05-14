@@ -30,6 +30,11 @@ golangcilint: tmp/bin/golangci-lint
 		set -x ; $< run --timeout 10m;\
 	fi
 
+tmp/venv/bin/activate:
+	@mkdir -p tmp
+	python3 -m venv tmp/venv
+	source tmp/venv/bin/activate && pip install -r requirements.txt
+
 .PHONY: govet
 govet:
 	go vet ./...
@@ -74,6 +79,10 @@ clean: _cmd_clean ## Clean the repo
 .PHONY: _cmd_clean
 _cmd_clean:
 	rm -f $(CMDS)
+
+.PHONY: doc
+doc: build tmp/venv/bin/activate ## Generate documentation
+	source tmp/venv/bin/activate && jinja-tree .
 
 .PHONY: help
 help::

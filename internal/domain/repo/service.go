@@ -33,6 +33,6 @@ func (s *Service) GetPRs(optss []GetPRsOptions) ([]PullRequest, error) {
 	return res, nil
 }
 
-func (s *Service) ListIssueEvents(issueNumber int) ([]IssueEvent, error) {
-	return s.adapter.ListIssueEvents(s.owner, s.repo, issueNumber)
+func (s *Service) ListIssueTimeline(issueNumber int) ([]IssueTimeline, error) {
+	return s.adapter.ListIssueTimeline(s.owner, s.repo, issueNumber)
 }

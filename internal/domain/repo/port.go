@@ -8,5 +8,5 @@ type GetPRsOptions struct {
 
 type Port interface {
 	GetPRs(owner, repo string, opts GetPRsOptions) ([]PullRequest, error)
-	ListIssueEvents(owner, repo string, issueNumber int) ([]IssueEvent, error)
+	ListIssueTimeline(owner, repo string, issueNumber int) ([]IssueTimeline, error)
 }

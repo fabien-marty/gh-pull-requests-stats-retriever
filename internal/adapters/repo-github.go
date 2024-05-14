@@ -89,33 +89,33 @@ out:
 	return res, nil
 }
 
-func newIssueEvent(evt *github.IssueEvent) domain_repo.IssueEvent {
+func newTimelineEvent(evt *github.Timeline) domain_repo.IssueTimeline {
 	label := ""
 	lbl := evt.GetLabel()
 	if lbl != nil {
 		label = lbl.GetName()
 	}
-	return domain_repo.IssueEvent{
-		Type:      domain_repo.ParseIssueEventType(evt.GetEvent()),
+	return domain_repo.IssueTimeline{
+		Type:      domain_repo.ParseIssueTimelineType(evt.GetEvent()),
 		CreatedAt: *evt.CreatedAt.GetTime(),
 		Label:     label,
 	}
 }
 
-func (r *repoGitHub) ListIssueEvents(owner, repo string, issueNumber int) ([]domain_repo.IssueEvent, error) {
+func (r *repoGitHub) ListIssueTimeline(owner, repo string, issueNumber int) ([]domain_repo.IssueTimeline, error) {
 	logger := log.GetLogger().With(slog.String("owner", owner), slog.String("repo", repo))
 	options := &github.ListOptions{
 		Page: 1,
 	}
-	res := []domain_repo.IssueEvent{}
+	res := []domain_repo.IssueTimeline{}
 	for {
 		logger.Info("Fetching label issue events...", slog.Int("pr.Number", issueNumber), slog.Int("page", options.Page))
-		evts, resp, err := r.client.Issues.ListIssueEvents(context.Background(), owner, repo, issueNumber, options)
+		evts, resp, err := r.client.Issues.ListIssueTimeline(context.Background(), owner, repo, issueNumber, options)
 		if err != nil {
 			return nil, err
 		}
 		for _, evt := range evts {
-			res = append(res, newIssueEvent(evt))
+			res = append(res, newTimelineEvent(evt))
 		}
 		if resp.NextPage == 0 {
 			break

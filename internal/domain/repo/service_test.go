@@ -9,7 +9,7 @@ import (
 
 type repoTestAdapter struct {
 	prss    map[string][]PullRequest
-	eventss map[int][]IssueEvent
+	eventss map[int][]IssueTimeline
 }
 
 func (r *repoTestAdapter) getKey(owner, repo string, opts GetPRsOptions) string {
@@ -24,9 +24,9 @@ func (r *repoTestAdapter) addPRs(owner, repo string, opts GetPRsOptions, prs []P
 	r.prss[key] = prs
 }
 
-func (r *repoTestAdapter) addIssueEvents(prNumber int, events []IssueEvent) {
+func (r *repoTestAdapter) addIssueEvents(prNumber int, events []IssueTimeline) {
 	if r.eventss == nil {
-		r.eventss = make(map[int][]IssueEvent)
+		r.eventss = make(map[int][]IssueTimeline)
 	}
 	r.eventss[prNumber] = events
 }
@@ -40,7 +40,7 @@ func (r *repoTestAdapter) GetPRs(owner, repo string, opts GetPRsOptions) ([]Pull
 	return prs, nil
 }
 
-func (r *repoTestAdapter) ListIssueEvents(owner, repo string, issueNumber int) ([]IssueEvent, error) {
+func (r *repoTestAdapter) ListIssueTimeline(owner, repo string, issueNumber int) ([]IssueTimeline, error) {
 	issues, ok := r.eventss[issueNumber]
 	if !ok {
 		return nil, nil
@@ -60,9 +60,13 @@ func TestGetPRs(t *testing.T) {
 	assert.Equal(t, []PullRequest{{Number: 1}, {Number: 2}, {Number: 3}}, prs)
 }
 
-func TestListIssueEvents(t *testing.T) {
+func TestListIssueTimeline(t *testing.T) {
 	adapter := repoTestAdapter{}
-	adapter.addIssueEvents(1, []IssueEvent{{Label: "foo"}, {Label: "bar"}})
-	// FIXME
-
+	event1 := IssueTimeline{}
+	event2 := IssueTimeline{}
+	adapter.addIssueEvents(1, []IssueTimeline{event1, event2})
+	service := NewService(&adapter, "owner", "repo")
+	events, err := service.ListIssueTimeline(1)
+	assert.NoError(t, err)
+	assert.Equal(t, []IssueTimeline{event1, event2}, events)
 }

@@ -12,12 +12,12 @@ owner = ""
 # (can be overriden by the command line argument --owner)
 repo = ""
 
-[[select_prs]]
-state = "open" # state of the PR: open, closed or all
+#[[select_prs]]
+#state = "open" # state of the PR: open, closed or all
 
 [[select_prs]]
-state = "closed"    # state of the PR: open, closed or all
-updated_seconds = 0 # PRs updated in the last X seconds (if the keyword is not present or if X <= 0, it will be ignored)
+state = "closed"           # state of the PR: open, closed or all
+updated_seconds = 31536000 # PRs updated in the last X seconds (if the keyword is not present or if X <= 0, it will be ignored)
 # FIXME
 
 ### Statistics to retrieve
@@ -30,12 +30,18 @@ labels = [
     ],
     [
         "PR: Review OK",
-    ],
-    [
-        "QA: OK",
+        "No QA",
+        "-On Hold",
+        "-on hold",
+        "-on hold infra",
+        "-No merge to devel",
     ],
     [
         "PR: Review OK",
-        "QA: OK",
+        "QA - OK",            # QA: OK
+        "-On Hold",
+        "-on hold",
+        "-on hold infra",
+        "-No merge to devel",
     ],
 ]
